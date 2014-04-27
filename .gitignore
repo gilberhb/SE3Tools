@@ -24,12 +24,9 @@
 *.app
 
 
-#intermediate compiler files
-*.ilk
+#visual studio files
 *.pdb
-
-
-#solutions and projects
+*.ilk
 *.sln
 *.vcproj
 *.vcxproj
