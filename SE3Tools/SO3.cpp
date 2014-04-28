@@ -49,13 +49,20 @@ double logSO3_A(double theta)
 		return theta/2.0/sin(theta);
 }
 
+double sgn(double a)
+{
+	return (a > 0) ? 1 : -1;
+}
+
+
+
 //This handles the case when the rotation
 //has an angle near pi
+// TODO: NOT CURRENTLY IMPLEMENTED
 Eigen::Matrix3d logSpecial(const Eigen::Matrix3d& R)
 {
 	double theta = RotationAngle(R);
-	Eigen::Matrix3d what2 = (0.5*(R + R.transpose()) - Eigen::Matrix3d::Identity())/expmSO3_B(theta);
-
+	Eigen::Matrix3d	B = 1.0/2.0*( R + R.transpose() );
 }
 
 EXPORT_SYM	
@@ -71,7 +78,8 @@ Eigen::Matrix3d log(const Eigen::Matrix3d& R)
 static
 double expmSO3_A(double theta)
 {
-	if (fabs(theta) > 1e-8) //return sin(theta)/theta
+	//cutoff at 1e-3, because taylor series truncation will be 6th order 1e-3, ~1e-18
+	if (fabs(theta) > 1e-3) //return sin(theta)/theta
 		return sin(theta)/theta; 
 	else //return the truncated taylor series expansion
 		return 1.0 - theta*theta/6.0 + theta*theta*theta*theta/120.0;
@@ -80,7 +88,7 @@ double expmSO3_A(double theta)
 static 
 double expmSO3_B(double theta)
 {
-	if (fabs(theta) > 1e-8) //return B factor
+	if (fabs(theta) > 1e-3) //return B factor
 		return (1.0-cos(theta))/theta/theta;
 	else //return the truncated taylor series for the B factor
 		return 1.0/2.0 - theta*theta/24.0 + theta*theta*theta*theta/720.0;
