@@ -27,7 +27,7 @@ int _tmain(int argc, _TCHAR* argv[])
 	QueryPerformanceFrequency(&freq);
 
 	Vector6d xi;
-	xi << 1.0,0.0,0.5,0.0,0.0,3.14159265358979323846264;
+	xi << 1.0,0.0,0.5,0.0,PI-1e-10,0.0;
 	QueryPerformanceCounter(&t1);
 
 
@@ -44,7 +44,10 @@ int _tmain(int argc, _TCHAR* argv[])
 	cout << SO3::log( (expm(hat6(xi))).block<3,3>(0,0) ) << endl;
 	cout << SO3::RotationAxis( (expm(hat6(xi))).block<3,3>(0,0) ) << endl;
 	cout << endl;
-	cout << SE3::log( SE3::expm(hat6(xi)) ) << endl;
+	cout << "hat6(xi) = " << endl << hat6(xi) << endl;
+	cout << "Log(expm(hat6(xi))) = " << endl << SE3::log( SE3::expm(hat6(xi)) ) << endl;
+
+	cout << "Error: " << endl << SE3::expm(SE3::log( SE3::expm(hat6(xi)) )) - SE3::expm(hat6(xi)) << endl;
 	return 0;
 }
 
