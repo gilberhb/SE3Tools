@@ -4,6 +4,7 @@ cmake_policy(SET CMP0020 NEW)
 
 set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake" )
 find_package(Eigen3 REQUIRED)
+include_directories(${EIGEN3_INCLUDE_DIR})
 #find_package(Qt5 COMPONENTS Core Widgets REQUIRED)
 #find_package(VTK REQUIRED)
 #include(${VTK_USE_FILE})
