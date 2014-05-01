@@ -6,6 +6,7 @@ using Eigen::Matrix3d;
 
 namespace SO3 {
 
+//convert 3-vector to skew-symmetric matrix
 EXPORT_SYM	
 Eigen::Matrix3d hat3(const Eigen::Vector3d& w)
 {
@@ -16,6 +17,7 @@ Eigen::Matrix3d hat3(const Eigen::Vector3d& w)
 	return What;
 }
 
+//convert skew-symmetric matrix to 3-vector
 EXPORT_SYM	
 Eigen::Vector3d vee3(const Eigen::Matrix3d& What)
 {
@@ -26,6 +28,7 @@ Eigen::Vector3d vee3(const Eigen::Matrix3d& What)
 	return w;
 }
 
+//A coefficient in exponential formula
 static
 double expmSO3_A(double theta)
 {
@@ -36,15 +39,18 @@ double expmSO3_A(double theta)
 		return 1.0 - theta*theta/6.0 + theta*theta*theta*theta/120.0;
 }
 
+//B coefficient in exponential formula
 static 
 double expmSO3_B(double theta)
 {
-	if (fabs(theta) > 1e-3) //return B factor
+	if (fabs(theta) > 2e-3) //return B factor
 		return (1.0-cos(theta))/theta/theta;
 	else //return the truncated taylor series for the B factor
 		return 1.0/2.0 - theta*theta/24.0 + theta*theta*theta*theta/720.0;
 }
 
+//Compute the matrix exponential of the matrix
+//What, which is assumed to be a skew-symmetric matrix
 EXPORT_SYM	
 Eigen::Matrix3d expm(const Eigen::Matrix3d& What)
 {
@@ -52,6 +58,8 @@ Eigen::Matrix3d expm(const Eigen::Matrix3d& What)
 	return Matrix3d::Identity() + expmSO3_A(theta)*What + expmSO3_B(theta)*What*What;
 }
 
+//Protected ArcCos function
+//so that it can't blow up in our face
 double ProtectedAcos(double arg)
 {
 	if (arg >= 1.0)
@@ -62,99 +70,52 @@ double ProtectedAcos(double arg)
 		return acos( arg );
 }
 
+//coefficient A in log expression
+double logSO3_A(double theta)
+{
+	if ( fabs(theta) < 1e-3 ) //this is good down to about 1e-18 even at theta = 1e-3
+		return 1.0/2.0 + theta*theta/12.0 + 7.0/720.0*theta*theta*theta*theta;
+	else
+		return theta/sin(theta)/2.0;
+}
+
+//Returns the cosine of the angle of rotation
+//for a rotation matrix
+double Rotation_CosineAngle(const Eigen::Matrix3d& R)
+{
+	return (R.trace() - 1.0)/2.0;
+}
+
+//Returns the sine of the angle of rotation
+//for a rotation matrix
+double Rotation_SineAngle(const Eigen::Matrix3d& R)
+{
+	return ( (R-R.transpose()).norm()/2.0/sqrt(2.0) );
+}
+
+//Compute the angle of rotation for 
+//a rotation matrix R.  Use atan2 to avoid
+//problems with either acos or asin.  
 EXPORT_SYM	
 double RotationAngle(const Eigen::Matrix3d& R)
 {
-	if ( fabs(3 - R.trace()) > 1e-6 ) 
-		return ProtectedAcos( (R.trace() - 1.0)/2.0 );
-	else
-		return 1.0/sqrt(2.0)*sqrt( R(0,2)*R(0,2) + R(0,1)*R(0,1) + R(1,2)*R(1,2) + R(1,0)*R(1,0) + R(2,0)*R(2,0) + R(2,1)*R(2,1) ); 
-}
-
-double logSO3_A(double theta)
-{
-	if ( fabs(theta) < 1e-8 )
-		return 1.0/2.0 + theta*theta/12.0 + 7.0/720.0*theta*theta*theta*theta;
-	else
-		return theta/2.0/sin(theta);
-}
-
-//signum function, returns 1 for positive values
-//and -1 for negative values, with 0 included in the positive half
-double sgn(double a)
-{
-	return (a >= 0) ? 1 : -1;
-}
-
-Eigen::Matrix3d DecomposeWhat2(const Eigen::Matrix3d& R)
-{
-	return 1.0/expmSO3_B(RotationAngle(R)) * ( 1.0/2.0*(R + R.transpose()) - Eigen::Matrix3d::Identity() );
-}
-
-//Restricts answers to positive values,
-//returns 0 on negative inputs
-double ClampPos(double x)
-{
-	return (x >= 0) ? x : 0;
-}
-
-double logSpecial_AxisXMag(const Eigen::Matrix3d& what2)
-{
-	double gamma = -what2(2,2);
-	double omega = -what2(0,0);
-	double theta = -what2(1,1);
-	return sqrt( ClampPos( (gamma - omega + theta)/2.0 ) );
-}
-
-double logSpecial_AxisYMag(const Eigen::Matrix3d& what2)
-{
-	double gamma = -what2(2,2);
-	double omega = -what2(0,0);
-	double theta = -what2(1,1);
-	return sqrt( ClampPos( (gamma + omega - theta)/2.0 ) );
-}
-
-double logSpecial_AxisZMag(const Eigen::Matrix3d& what2)
-{
-	double gamma = -what2(2,2);
-	double omega = -what2(0,0);
-	double theta = -what2(1,1);
-	return sqrt( ClampPos( (omega - gamma + theta)/2.0 ) );
-}
-
-Eigen::Vector3d logSpecial_AxisMagnitudes(const Eigen::Matrix3d& R)
-{
-	//We will get the values of |wx|, |wy|, |wz| from
-	//what2
-	Eigen::Matrix3d what2 = DecomposeWhat2(R);
-	Eigen::Vector3d wmags;
-	wmags(0) = logSpecial_AxisXMag(what2);
-	wmags(1) = logSpecial_AxisYMag(what2);
-	wmags(2) = logSpecial_AxisZMag(what2);
-
-	return wmags;
+	return atan2(Rotation_SineAngle(R), Rotation_CosineAngle(R));		//it is impossible for both arguments to be zero, so no chance of a blow-up
 }
 
 //This handles the case when the rotation
 //has an angle near pi
-// TODO: NOT CURRENTLY IMPLEMENTED
+// This method works by computing the logarithm of R^2.  Since
+// it will only be called when the angle is within ~0.5 radian of
+// pi, we know that R^2 will be a rotation which has the opposite
+// axis and an angle of (pi-RotationAngle(R))*2.  This information
+// is used to compute the log of R. This turns out to be more
+// accurate than computing the log of R by more complicated means
+// (at least in 64-bit IEEE floating point math).
 Eigen::Matrix3d logSpecial(const Eigen::Matrix3d& R)
 {
-	//get the rotation vector magnitudes
-	Eigen::Vector3d wmags = logSpecial_AxisMagnitudes(R);
-
-	//don't want to divide by A(theta) becuase it is very small
-	//used only to determine signs
-	Eigen::Matrix3d Awhat = 1.0/2.0*( R - R.transpose() ); //equal to A(theta)*what
-	Eigen::Vector3d Aw = SO3::vee3(Awhat);
-
-	//now determine the signs individually from terms in Awhat
-	Eigen::Vector3d w;
-	w(0) = wmags(0) * sgn( Aw(0) );
-	w(1) = wmags(1) * sgn( Aw(1) );
-	w(2) = wmags(2) * sgn( Aw(2) );
-	
-	return SO3::hat3(w);
+	Eigen::Matrix3d wwHat = SO3::log(R*R); //compute the log of R^2, which can be done very accurately
+	double theta = wwHat.norm()/sqrt(2.0);
+	return -wwHat/theta*(M_PI-theta/2.0);
 }
 
 EXPORT_SYM	
@@ -166,17 +127,17 @@ Eigen::Matrix3d log(const Eigen::Matrix3d& R)
 	//is zero, which gives the wrong answer. 
 	double theta = RotationAngle(R);
 	//use a tolerance that is generous, because 
-	//logSpecial will work anywhere near theta = pi, but
-	//has trouble around zero due to the computation of square roots
-	//of tiny numbers
-	if ( fabs(theta - M_PI) > 1e-3 ) 
+	//logSpecial will work anywhere near theta = pi, whereas
+	//the inaccuracy in logSO3_A becomes quite bad near theta = pi
+	if ( fabs(theta - M_PI) > 0.5 ) //if the angle is within 0.5 radian of pi, use logSpecial 
 		return logSO3_A(theta)*( R - R.transpose() );
 	else
 		return logSpecial(R); 
 }
 
-
-
+//Form the rotation matrix which represents a rotation
+//about the axis given by the angle given. The axis
+//may not be zero.
 EXPORT_SYM  
 Eigen::Matrix3d AxisAngle(const Eigen::Vector3d& axis, double angle)
 {
@@ -184,13 +145,23 @@ Eigen::Matrix3d AxisAngle(const Eigen::Vector3d& axis, double angle)
 	return SO3::expm( angle/sqrt(axis.dot(axis)) * SO3::hat3(axis) );
 }
 
+//normalize a 3-vector
+Eigen::Vector3d Normalize3d(const Eigen::Vector3d& in)
+{
+	return in/in.norm();
+}
+
+//Compute the axis of rotation for the rotation matrix R
+//Note that this becomes very ill-conditioned when the rotation
+//axis is small, whereas the logarithm doesn't suffer this
+//problem. 
 EXPORT_SYM  
 Eigen::Vector3d RotationAxis(const Eigen::Matrix3d& R)
 {
 	if (RotationAngle(R) == 0.0) {
 		return Eigen::Vector3d::Zero();
 	} else {
-		return 1.0/RotationAngle(R) * SO3::vee3( SO3::log( R ) );
+		return Normalize3d(SO3::vee3( SO3::log( R ) )); //log is accurate, so use it
 	}
 }
 

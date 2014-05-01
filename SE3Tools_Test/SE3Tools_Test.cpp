@@ -50,14 +50,61 @@ int _tmain(int argc, _TCHAR* argv[])
 
 	cout << "Error: " << endl << SE3::expm(SE3::log( SE3::expm(hat6(xi)) )) - SE3::expm(hat6(xi)) << endl;
 
-	cout << "Testing small angles: " << endl;
-	Eigen::Vector3d wSmall;
-	wSmall(0) = 1e-1;
-	wSmall(1) = 1e-1;
-	wSmall(2) = 1e-1;
+	cout << "Testing angles near zero: " << endl;
+	double err = 0;
+	double errLog = 0;
+	double dMax = 0;
+	for (double d = 0.5; d >= 0; d -= 1e-6) {
+		Eigen::Vector3d wSmall;
+		wSmall(0) = d/sqrt(3.0);
+		wSmall(1) = d/sqrt(3.0);
+		wSmall(2) = d/sqrt(3.0);
+		double e = fabs(wSmall.norm() - SO3::RotationAngle( SO3::expm( SO3::hat3( wSmall ) ) ) );
+		if (e/wSmall.norm() > err) {
+			err = e/wSmall.norm();
+			dMax = d;
+		}
 
-	cout << "Actual Angle norm(w): " << std::setprecision(10) << wSmall.norm() << endl;
-	cout << "RotationAngle(expm(hat3(w))): " << std::setprecision(10) << SO3::RotationAngle( SO3::expm( SO3::hat3( wSmall ) ) ) << endl;
+		e = ( SO3::hat3(wSmall) - SO3::log( SO3::expm( SO3::hat3( wSmall ) ) ) ).norm();
+		if (e > errLog)
+			errLog = e/wSmall.norm();
+	}
+
+	cout << "Largest relative Angle Error: " << std::setprecision(10) << err << endl;
+	cout << "d = " << dMax << endl;
+	cout << "Largest relative Log Error: " << std::setprecision(10) << errLog << endl;
+
+	cout << "Testing angles near pi: " << endl;
+	err = 0;
+	errLog = 0;
+	Eigen::Matrix3d wHatActual;
+	Eigen::Matrix3d wHatLog;
+	double dMaxErr = 0;
+	for (double d = 0.5; d >= 0; d -= 1e-6) {
+		Eigen::Vector3d wPi;
+		wPi(0) = -M_PI/sqrt(3.0) + d/sqrt(3.0);
+		wPi(1) = -M_PI/sqrt(3.0) + d/sqrt(3.0);
+		wPi(2) = M_PI/sqrt(3.0) - d/sqrt(3.0);
+		double e = fabs(wPi.norm() - SO3::RotationAngle( SO3::expm( SO3::hat3( wPi ) ) ) );
+		if (e/wPi.norm() > err)
+			err = e/wPi.norm();
+
+		e = ( SO3::hat3(wPi) - SO3::log( SO3::expm( SO3::hat3( wPi ) ) ) ).norm();
+		if (e > errLog) {
+			errLog = e/wPi.norm();
+
+			wHatActual = SO3::hat3(wPi);
+			wHatLog = SO3::log( SO3::expm( SO3::hat3( wPi ) ) );
+			dMaxErr = d;
+		}
+	}
+
+	cout << "Largest relative angle error: " << err << endl;
+	cout << "Largest relative Log Error: " << std::setprecision(10) << errLog << endl;
+	cout.precision(14);
+	cout << "Max Log Error wHat: " << endl << wHatActual << endl;
+	cout << "Max Log Error wHatLog: " << endl << wHatLog << endl;
+	cout << "d = " << dMaxErr << endl;
 	return 0;
 }
 
