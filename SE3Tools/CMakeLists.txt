@@ -1,10 +1,15 @@
 SET(SOURCES	SE3.cpp
-		SO3.cpp
-		stdafx.cpp)
+		SO3.cpp)
 SET(HEADERS	SE3.h
-		SO3.h
-		stdafx.h)
+		SO3.h)
 
 add_library(SE3Tools SHARED ${SOURCES} ${HEADERS})
 set_target_properties(SE3Tools PROPERTIES DEFINE_SYMBOL "BUILD_SHARED_LIB")
 set_target_properties(SE3Tools PROPERTIES DEBUG_POSTFIX "d")
+
+FILE(GLOB files "${CMAKE_CURRENT_SOURCE_DIR}/*.h")
+INSTALL(FILES ${files} DESTINATION include)
+INSTALL(TARGETS SE3Tools	
+		RUNTIME DESTINATION bin
+		LIBRARY DESTINATION lib
+		ARCHIVE DESTINATION lib)

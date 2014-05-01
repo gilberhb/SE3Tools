@@ -1,11 +1,12 @@
 // SE3Tools_Test.cpp : Defines the entry point for the console application.
 //
 
-#include "stdafx.h"
 #include <Eigen/Dense>
 #include <iostream>
 #include "../SE3Tools/SE3.h"
 #include "Windows.h"
+#include <tchar.h>
+#include <iomanip>
 
 using Eigen::MatrixXd;
 using Eigen::Vector3d;
@@ -48,6 +49,15 @@ int _tmain(int argc, _TCHAR* argv[])
 	cout << "Log(expm(hat6(xi))) = " << endl << SE3::log( SE3::expm(hat6(xi)) ) << endl;
 
 	cout << "Error: " << endl << SE3::expm(SE3::log( SE3::expm(hat6(xi)) )) - SE3::expm(hat6(xi)) << endl;
+
+	cout << "Testing small angles: " << endl;
+	Eigen::Vector3d wSmall;
+	wSmall(0) = 1e-1;
+	wSmall(1) = 1e-1;
+	wSmall(2) = 1e-1;
+
+	cout << "Actual Angle norm(w): " << std::setprecision(10) << wSmall.norm() << endl;
+	cout << "RotationAngle(expm(hat3(w))): " << std::setprecision(10) << SO3::RotationAngle( SO3::expm( SO3::hat3( wSmall ) ) ) << endl;
 	return 0;
 }
 

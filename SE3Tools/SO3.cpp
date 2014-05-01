@@ -65,7 +65,10 @@ double ProtectedAcos(double arg)
 EXPORT_SYM	
 double RotationAngle(const Eigen::Matrix3d& R)
 {
-	return ProtectedAcos( (R.trace() - 1.0)/2.0 );
+	if ( fabs(3 - R.trace()) > 1e-6 ) 
+		return ProtectedAcos( (R.trace() - 1.0)/2.0 );
+	else
+		return 1.0/sqrt(2.0)*sqrt( R(0,2)*R(0,2) + R(0,1)*R(0,1) + R(1,2)*R(1,2) + R(1,0)*R(1,0) + R(2,0)*R(2,0) + R(2,1)*R(2,1) ); 
 }
 
 double logSO3_A(double theta)
