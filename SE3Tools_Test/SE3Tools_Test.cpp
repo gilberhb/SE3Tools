@@ -54,7 +54,7 @@ int _tmain(int argc, _TCHAR* argv[])
 	double err = 0;
 	double errLog = 0;
 	double dMax = 0;
-	for (double d = 0.5; d >= 0; d -= 1e-6) {
+	for (double d = 0.5; d >= 1e-300; d /= 1.001) {
 		Eigen::Vector3d wSmall;
 		wSmall(0) = d/sqrt(3.0);
 		wSmall(1) = d/sqrt(3.0);
@@ -80,7 +80,7 @@ int _tmain(int argc, _TCHAR* argv[])
 	Eigen::Matrix3d wHatActual;
 	Eigen::Matrix3d wHatLog;
 	double dMaxErr = 0;
-	for (double d = 0.5; d >= 0; d -= 1e-6) {
+	for (double d = 0.5; d >= 1e-300; d /= 1.001) {
 		Eigen::Vector3d wPi;
 		wPi(0) = -M_PI/sqrt(3.0) + d/sqrt(3.0);
 		wPi(1) = -M_PI/sqrt(3.0) + d/sqrt(3.0);
