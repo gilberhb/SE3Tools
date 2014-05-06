@@ -99,27 +99,59 @@ namespace SO3 {
 	EXPORT_SYM	Eigen::Matrix3d expm(const Eigen::Matrix3d& What);
 
 	/*!
-	 * \brief  Compute the angle of rotation (modulo \f$ 2\pi \f$) for a given rotation matrix.
+	 * \brief  Compute the angle of rotation (between \f$ -\pi \f$ and \f$ \pi \f$) for a given rotation matrix.
 	 * 
-	 * This function computes the angle of rotation using the formula
+	 * This function computes the angle of rotation. Traditionally, the formula
 	 * \f[
 	 *		\theta = \cos^{-1} \left( \frac{\text{trace}(R)-1}{2} \right)
 	 * \f]
+	 * is proposed to compute this angle. However, this formula suffers from numerical
+	 * problems when implemented in floating point arithmetic and the rotation represents
+	 * one that is either near 0 or near pi radians of rotation. 
 	 *
-	 * For rotation matrices which represent angles near zero, the above function
-	 * is not used. For these cases, the argument to \f$ \cos^{-1} \f$ is nearly 1
-	 * and instead the off-diagonal elements of \f$ R \f$ are used
-	 * to compute the rotation angle, since \f$ R \approx I + \hat{\omega} \f$.
-	 * The cutoff is currently hardcoded for when \f$ |\text{trace}(R) - 3| <= 1 \times 10^{-6} \f$.
-	 * For angles near \f$ \pi \f$ the result may have some error as no special handling of this case
-	 * has been implemented. 
+	 * Instead, we can leverage the four quadrant Atan2 function for which
+	 * we have an accurate implemenation in <cmath>. The following relations
+	 * give the cosine of the angle and the sine of the angle of rotation.
+	 * \f[ \cos \theta = \frac{ \text{trace}(R) - 1 }{ 2 } \f]
+	 * \f[ \sin \theta = \frac{ ||R - R^T||_F }{ 2\sqrt{2} } \f]
+	 * where \f$ ||\cdot||_F \f$ is the Frobenius norm. Then \f$ \theta = \text{atan2}(\sin \theta, \cos \theta) \f$.
 	 *
 	 * \param  R	The rotation matrix.
 	 * \return theta	The angle of rotation.
 	 */
 	EXPORT_SYM  double RotationAngle(const Eigen::Matrix3d& R);
 
-
+	/*!
+	 * \brief  Compute the 3d axis of rotation for a rotation matrix.
+	 * 
+	 * This function is a utility function that computes the axis of rotation 
+	 * of a rotation matrix. 
+	 * The function SO3::log is used to first compute the logarithm of R, 
+	 * and then the axis is extracted from the result. The non-normalized
+	 * vector is computed by SO3::vee3 ( SO3::log ( R ) ), and then divided
+	 * by its norm to get the correct answer. The result is accurate even
+	 * when the rotation is small. If the rotation is exactly the identity,
+	 * an std::runtime_error exception is thrown with a message indicating
+	 * this problem.
+	 *
+	 * \param  R	The rotation matrix.
+	 * \return axis	The axis of rotation as a unit vector.
+	 */
 	EXPORT_SYM  Eigen::Vector3d RotationAxis(const Eigen::Matrix3d& R);
+
+	/*!
+	 * \brief  Generate a rotation matrix from an axis and an angle.
+	 * 
+	 * This function is a utility function which generates the rotation 
+	 * matrix given by a rotation about a given axis by a given angle. 
+     * The angle should be supplied in radians. This function first
+     * computes the element of se(3) corresponding to the axis angle
+     * representation as ( angle*SO3::hat3(axis) ). Then the function
+     * SO3::expm is used to compute the rotation.
+	 *
+	 * \param  axis	The rotation axis.
+	 * \param  angle The rotation angle.
+	 * \return axis	The axis of rotation as a unit vector.
+	 */
 	EXPORT_SYM  Eigen::Matrix3d AxisAngle(const Eigen::Vector3d& axis, double angle);
 }

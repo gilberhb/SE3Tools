@@ -5,8 +5,10 @@
 #include <iostream>
 #include "../SE3Tools/SE3.h"
 #include "Windows.h"
+#undef min
 #include <tchar.h>
 #include <iomanip>
+#include <limits>
 
 using Eigen::MatrixXd;
 using Eigen::Vector3d;
@@ -105,6 +107,50 @@ int _tmain(int argc, _TCHAR* argv[])
 	cout << "Max Log Error wHat: " << endl << wHatActual << endl;
 	cout << "Max Log Error wHatLog: " << endl << wHatLog << endl;
 	cout << "d = " << dMaxErr << endl;
+
+	{
+	cout << "Testing Axis of Rotation for small rotations" << endl;
+	Eigen::Vector3d w;
+	w = Eigen::Vector3d::Zero();
+	w(0) = 2*std::numeric_limits<double>::min();
+	w(1) = 5*std::numeric_limits<double>::min();
+	w(2) = 7*std::numeric_limits<double>::min();
+	cout << "Correct axis" << endl << w.normalized() << endl;
+	cout << "Norm of correct axis: " << w.normalized().norm() << endl;
+	cout << "Axis of RotationAxis(expm(hat3(w))): " << endl << SO3::RotationAxis( SO3::expm( SO3::hat3( w ) ) ) << endl;
+	cout << "Norm of RotationAxis(expm(hat3(w))): " << SO3::RotationAxis( SO3::expm( SO3::hat3( w ) ) ).norm() << endl;
+	try {
+		cout << "Rotation Axis of Identity: " << endl << SO3::RotationAxis( Eigen::Matrix3d::Identity() ) << endl;
+	} catch (std::runtime_error& e)	{
+		cout << e.what() << endl;
+	}
+
+	}
+
+	{
+		Eigen::Vector3d w = Eigen::Vector3d::UnitX() + Eigen::Vector3d::UnitY();
+		w = w.normalized().eval();
+		cout.precision(20);
+		cout << "Testing AxisAngle" << endl;
+		cout << "AxisAngle(w,1e-320) " << endl << SO3::AxisAngle(w, 1e-320) << endl;
+		cout << "expm(1e-320*hat3(w)) " << endl << SO3::expm( 1e-320*hat3(w) ) << endl;
+		cout << "AxisAngle(w,0.1) - expm(0.1*hat3(w))" << endl << 
+			(SO3::AxisAngle( w, 0.1 ) - SO3::expm( 0.1 * SO3::hat3(w) )) << endl;
+		cout << "AxisAngle(w,0.1)" << endl <<
+			SO3::AxisAngle(w,0.1) << endl;
+	
+		cout << "expm(0.1*hat3(w))" << endl << SO3::expm(0.1*hat3(w)) << endl;
+	}
+
+	{ 
+		try {
+			cout << "AxisAngle with the zero vector: " << endl;
+			Eigen::Vector3d w = Eigen::Vector3d::Zero();
+			cout << SO3::AxisAngle(w, 10) << endl;
+		} catch (std::runtime_error& e) {
+			cout << e.what() << endl;
+		}
+	}
 	return 0;
 }
 

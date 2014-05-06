@@ -1,5 +1,6 @@
 #include "SO3.h"
 #include <iostream>
+#include <stdexcept>
 
 using Eigen::Vector3d;
 using Eigen::Matrix3d;
@@ -133,9 +134,8 @@ Eigen::Matrix3d log(const Eigen::Matrix3d& R)
 //normalize a 3-vector
 Eigen::Vector3d Normalize3d(const Eigen::Vector3d& in)
 {
-	assert(in.dot(in) != 0); //not identically zero
-	return in/in.norm();
-}
+	return in.normalized();
+} 
 
 //Form the rotation matrix which represents a rotation
 //about the axis given by the angle given. The axis
@@ -143,6 +143,8 @@ Eigen::Vector3d Normalize3d(const Eigen::Vector3d& in)
 EXPORT_SYM  
 Eigen::Matrix3d AxisAngle(const Eigen::Vector3d& axis, double angle)
 {
+	if (axis.dot(axis) == 0)
+		throw std::runtime_error("Cannot compute AxisAngle rotation for zero axis.");
 	Eigen::Vector3d axisN = Normalize3d(axis);
 	return SO3::expm( angle * SO3::hat3(axisN) );
 }
@@ -155,7 +157,7 @@ EXPORT_SYM
 Eigen::Vector3d RotationAxis(const Eigen::Matrix3d& R)
 {
 	if (RotationAngle(R) == 0.0) {
-		return Eigen::Vector3d::Zero();
+		throw std::runtime_error("The identity rotation matrix does not have a rotation axis.");
 	} else {
 		return Normalize3d(SO3::vee3( SO3::log( R ) )); //log is accurate, so use it
 	}
