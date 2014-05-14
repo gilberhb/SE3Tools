@@ -38,7 +38,6 @@ double sinc(double theta)
 }
 
 //A coefficient in exponential formula
-static
 double expmSO3_A(double theta)
 {
 	return sinc(theta);
@@ -48,7 +47,6 @@ double expmSO3_A(double theta)
 //This stays stable as long as catastrophic
 //cancellation is not allowed in the 1-cos(theta)
 //term in the numerator
-static 
 double expmSO3_B(double theta)
 {
 	double top = 2.0*sin(theta/2.0)*sin(theta/2.0); //trig identity (1-cos(theta)) = 2sin^2(theta)
@@ -134,7 +132,7 @@ Eigen::Matrix3d log(const Eigen::Matrix3d& R)
 //normalize a 3-vector
 Eigen::Vector3d Normalize3d(const Eigen::Vector3d& in)
 {
-	return in.normalized();
+	return in/in.stableNorm();
 } 
 
 //Form the rotation matrix which represents a rotation
