@@ -32,42 +32,31 @@ Vector6d vee6(const Eigen::Matrix4d& XiHat)
 	return Xi;
 }
 
-//this function not needed, already in SO3
-//static
-//double expmSE3_A(double theta)
-//{
-//	if (fabs(theta) > 1e-8) //return sin(theta)/theta
-//		return sin(theta)/theta; 
-//	else //return the truncated taylor series expansion
-//		return 1.0 - theta*theta/6.0 + theta*theta*theta*theta/120.0;
-//}
-
-//this function not needed, already in SO3
-//static 
-//double expmSE3_B(double theta)
-//{
-//	if (fabs(theta) > 1e-8) //return B factor
-//		return (1.0-cos(theta))/theta/theta;
-//	else //return the truncated taylor series for the B factor
-//		return 1.0/2.0 - theta*theta/24.0 + theta*theta*theta*theta/720.0;
-//}
-
-//need to ensure that theta^6/362880 < 1.0/6.0*eps
-static 
-inline double expmSE3_C_thresh()
+static
+double expmSE3_C_Pade_Num(double theta)
 {
-	return pow(362880.0/6.0*std::numeric_limits<double>::epsilon(), 1.0/6.0);
+	return -1768969.0*pow(theta,6) + 368371080.0*pow(theta,4) - 26056190160.0*pow(theta,2) + 793988395200.0;
+}
+
+static
+double expmSE3_C_Pade_Den(double theta)
+{
+	return 2295720.0*pow(theta,6) + 631849680.0*pow(theta,4) + 81859377600.0*pow(theta,2) + 4763930371200.0;
+}
+
+static 
+double expmSE3_C_Pade(double theta)
+{
+	return expmSE3_C_Pade_Num(theta) / expmSE3_C_Pade_Den(theta);
 }
 
 static 
 double expmSE3_C(double theta)
 {
-	std::cout << expmSE3_C_thresh() << std::endl;
-	if (fabs(theta) > expmSE3_C_thresh()) //return the C factor
+	if (fabs(theta) > 0.5) //return the C factor
 		return (1.0-SO3::expmSO3_A(theta))/theta/theta;
-	else //return the 6th order truncated taylor series for the C factor
-		return 1.0/6.0 - theta*theta/120.0 + theta*theta*theta*theta/5040.0
-		               - theta*theta*theta*theta*theta*theta/362880.0;
+	else //return the 6th order Pade approximant to expmSE3_C
+		return expmSE3_C_Pade(theta);
 }
 
 
