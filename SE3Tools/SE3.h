@@ -101,6 +101,17 @@ namespace SE3 {
 	 * \return      Ad(g)		The 6 x 6 Adjoint matrix.
 	 */
 	EXPORT_SYM Eigen::Matrix<double,6,6> Adjoint(const Eigen::Matrix4d& g);
+
+	/*!
+	 * \brief Turn a 3x3 rotation matrix into its 4x4 homogeneous representation.
+	 *
+	 * Packs a 3x3 rotation into a 4x4 element of SE(3) with zero translation part.
+	 *
+	 *
+	 * \param[in]	R			The rotation matrix.
+	 * \return      T		    The homogeneous transformation.
+	 */
+	EXPORT_SYM Eigen::Matrix4d MakeHomogeneous(const Eigen::Matrix3d& R);
 }
 
 /*! @} End of Doxygen Group */

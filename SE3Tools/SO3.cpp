@@ -137,12 +137,6 @@ Eigen::Matrix3d log(const Eigen::Matrix3d& R)
 		return logSpecial(R); 
 }
 
-//normalize a 3-vector
-Eigen::Vector3d Normalize3d(const Eigen::Vector3d& in)
-{
-	return in/in.stableNorm();
-} 
-
 //Form the rotation matrix which represents a rotation
 //about the axis given by the angle given. The axis
 //may not be zero.

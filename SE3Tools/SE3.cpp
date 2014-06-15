@@ -99,4 +99,13 @@ Eigen::Matrix4d log(const Eigen::Matrix4d& g)
 	return Xi;
 }
 
+
+EXPORT_SYM 
+Eigen::Matrix4d MakeHomogeneous(const Eigen::Matrix3d& R)
+{
+	Eigen::Matrix4d T = Eigen::Matrix4d::Identity();
+	T.block<3,3>(0,0) = R;
+	return T;
+}
+
 }
