@@ -1,5 +1,6 @@
 #include "SO3.h"
 #include <iostream>
+#include <stdexcept>
 
 using Eigen::Vector3d;
 using Eigen::Matrix3d;
@@ -36,25 +37,33 @@ Eigen::Vector3d vee3(const Eigen::Matrix3d& What)
 	return w;
 }
 
+double sinc(double theta)
+{
+	if (theta == 0.0)
+		return 1.0;
+	else
+		return sin(theta)/theta;
+}
+
 //A coefficient in exponential formula
-static
 double expmSO3_A(double theta)
 {
-	//cutoff at 1e-3, because taylor series truncation will be 6th order 1e-3, ~1e-18
-	if (fabs(theta) > 1e-3) //return sin(theta)/theta
-		return sin(theta)/theta; 
-	else //return the truncated taylor series expansion
-		return 1.0 - theta*theta/6.0 + theta*theta*theta*theta/120.0;
+	return sinc(theta);
 }
 
 //B coefficient in exponential formula
-static 
+//This stays stable as long as catastrophic
+//cancellation is not allowed in the 1-cos(theta)
+//term in the numerator
 double expmSO3_B(double theta)
 {
-	if (fabs(theta) > 2e-3) //return B factor
-		return (1.0-cos(theta))/theta/theta;
-	else //return the truncated taylor series for the B factor
-		return 1.0/2.0 - theta*theta/24.0 + theta*theta*theta*theta/720.0;
+	double top = 2.0*sin(theta/2.0)*sin(theta/2.0); //trig identity (1-cos(theta)) = 2sin^2(theta)
+	double bottom = theta*theta;
+	if ( top != 0 && bottom != 0 )
+		return top/bottom;
+	else
+		return 1.0/2.0;
+
 }
 
 //Compute the matrix exponential of the matrix
@@ -66,25 +75,10 @@ Eigen::Matrix3d expm(const Eigen::Matrix3d& What)
 	return Matrix3d::Identity() + expmSO3_A(theta)*What + expmSO3_B(theta)*What*What;
 }
 
-//Protected ArcCos function
-//so that it can't blow up in our face
-double ProtectedAcos(double arg)
-{
-	if (arg >= 1.0)
-		return 0.0;
-	else if (arg <= -1.0)
-		return M_PI;
-	else
-		return acos( arg );
-}
-
 //coefficient A in log expression
 double logSO3_A(double theta)
 {
-	if ( fabs(theta) < 1e-3 ) //this is good down to about 1e-18 even at theta = 1e-3
-		return 1.0/2.0 + theta*theta/12.0 + 7.0/720.0*theta*theta*theta*theta;
-	else
-		return theta/sin(theta)/2.0;
+	return 1.0/sinc(theta)/2.0; //sinc is stable, so this is ok
 }
 
 //Returns the cosine of the angle of rotation
@@ -143,17 +137,23 @@ Eigen::Matrix3d log(const Eigen::Matrix3d& R)
 		return logSpecial(R); 
 }
 
+//normalize a 3-vector
+Eigen::Vector3d Normalize3d(const Eigen::Vector3d& in)
+{
+	return in/in.stableNorm();
+} 
+
 //Form the rotation matrix which represents a rotation
 //about the axis given by the angle given. The axis
 //may not be zero.
 EXPORT_SYM  
 Eigen::Matrix3d AxisAngle(const Eigen::Vector3d& axis, double angle)
 {
-	assert( axis.dot(axis) != 0 );
-	return SO3::expm( angle * SO3::hat3( Normalize3d(axis) ) );
+	if (axis.dot(axis) == 0)
+		throw std::runtime_error("Cannot compute AxisAngle rotation for zero axis.");
+	Eigen::Vector3d axisN = Normalize3d(axis);
+	return SO3::expm( angle * SO3::hat3(axisN) );
 }
-
-
 
 //Compute the axis of rotation for the rotation matrix R
 //Note that this becomes very ill-conditioned when the rotation
@@ -163,7 +163,7 @@ EXPORT_SYM
 Eigen::Vector3d RotationAxis(const Eigen::Matrix3d& R)
 {
 	if (RotationAngle(R) == 0.0) {
-		return Eigen::Vector3d::Zero();
+		throw std::runtime_error("The identity rotation matrix does not have a rotation axis.");
 	} else {
 		return Normalize3d(SO3::vee3( SO3::log( R ) )); //log is accurate, so use it
 	}

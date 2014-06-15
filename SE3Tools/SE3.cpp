@@ -1,9 +1,15 @@
 #include <Eigen/Dense>
 #include "SE3.h"
+#include <iostream>
 
 using Eigen::Matrix3d;
 using Eigen::Matrix4d;
 using Eigen::Vector3d;
+
+namespace SO3 {
+	double expmSO3_A(double);
+	double expmSO3_B(double);
+}
 
 namespace SE3 {
 
@@ -27,37 +33,37 @@ Vector6d vee6(const Eigen::Matrix4d& XiHat)
 }
 
 static
-double expmSE3_A(double theta)
+double expmSE3_C_Pade_Num(double theta)
 {
-	if (fabs(theta) > 1e-8) //return sin(theta)/theta
-		return sin(theta)/theta; 
-	else //return the truncated taylor series expansion
-		return 1.0 - theta*theta/6.0 + theta*theta*theta*theta/120.0;
+	return -1768969.0*pow(theta,6) + 368371080.0*pow(theta,4) - 26056190160.0*pow(theta,2) + 793988395200.0;
+}
+
+static
+double expmSE3_C_Pade_Den(double theta)
+{
+	return 2295720.0*pow(theta,6) + 631849680.0*pow(theta,4) + 81859377600.0*pow(theta,2) + 4763930371200.0;
 }
 
 static 
-double expmSE3_B(double theta)
+double expmSE3_C_Pade(double theta)
 {
-	if (fabs(theta) > 1e-8) //return B factor
-		return (1.0-cos(theta))/theta/theta;
-	else //return the truncated taylor series for the B factor
-		return 1.0/2.0 - theta*theta/24.0 + theta*theta*theta*theta/720.0;
+	return expmSE3_C_Pade_Num(theta) / expmSE3_C_Pade_Den(theta);
 }
 
 static 
 double expmSE3_C(double theta)
 {
-	if (fabs(theta) > 1e-8) //return the C factor
-		return (1.0-expmSE3_A(theta))/theta/theta;
-	else //return the truncated taylor series for the C factor
-		return 1.0/6.0 - theta*theta/120.0 + theta*theta*theta*theta/5040.0;
+	if (fabs(theta) > 0.5) //return the C factor
+		return (1.0-SO3::expmSO3_A(theta))/theta/theta;
+	else //return the 6th order Pade approximant to expmSE3_C
+		return expmSE3_C_Pade(theta);
 }
 
 
 Eigen::Matrix3d expmSE3_V(const Eigen::Matrix3d& What)
 {
 	double theta = 1.0/sqrt(2.0)*What.norm();
-	return Matrix3d::Identity() + expmSE3_B(theta)*What + expmSE3_C(theta)*What;
+	return Matrix3d::Identity() + SO3::expmSO3_B(theta)*What + expmSE3_C(theta)*What*What;
 }
 
 EXPORT_SYM
@@ -86,9 +92,9 @@ EXPORT_SYM
 Eigen::Matrix4d log(const Eigen::Matrix4d& g)
 {
 	Eigen::Matrix4d Xi = Eigen::Matrix4d::Zero();
-	Eigen::Matrix3d What = SO3::log( g.block<3,3>(0,0) );
-	Xi.block<3,3>(0,0) = What;
-	Xi.block<3,1>(0,3) = 
+	Eigen::Matrix3d What = SO3::log( g.block<3,3>(0,0) ); //compute the log on the rotation matrix
+	Xi.block<3,3>(0,0) = What;                            //first part of matrix is What
+	Xi.block<3,1>(0,3) =                                  //last part has to be solved for
 		expmSE3_V(What).partialPivLu().solve( g.block<3,1>(0,3) );
 	return Xi;
 }
