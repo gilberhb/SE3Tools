@@ -93,7 +93,8 @@ double Rotation_SineAngle(const Eigen::Matrix3d& R)
 EXPORT_SYM	
 double RotationAngle(const Eigen::Matrix3d& R)
 {
-	return atan2(Rotation_SineAngle(R), Rotation_CosineAngle(R));		//it is impossible for both arguments to be zero, so no chance of a blow-up
+	//it is impossible for both arguments to be zero, so no chance of a blow-up
+	return atan2(Rotation_SineAngle(R), Rotation_CosineAngle(R));		
 }
 
 //This handles the case when the rotation
