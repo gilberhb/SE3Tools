@@ -7,6 +7,14 @@ using Eigen::Matrix3d;
 
 namespace SO3 {
 
+//normalize a 3-vector
+Eigen::Vector3d Normalize3d(const Eigen::Vector3d& in)
+{
+	//stableNorm uses a hypot function to compute length
+	// to avoid potential underflows or overflows
+	return in/in.stableNorm(); 
+}
+
 //convert 3-vector to skew-symmetric matrix
 EXPORT_SYM	
 Eigen::Matrix3d hat3(const Eigen::Vector3d& w)
@@ -130,12 +138,6 @@ Eigen::Matrix3d log(const Eigen::Matrix3d& R)
 		return logSpecial(R); 
 }
 
-//normalize a 3-vector
-Eigen::Vector3d Normalize3d(const Eigen::Vector3d& in)
-{
-	return in/in.stableNorm();
-} 
-
 //Form the rotation matrix which represents a rotation
 //about the axis given by the angle given. The axis
 //may not be zero.
@@ -160,6 +162,36 @@ Eigen::Vector3d RotationAxis(const Eigen::Matrix3d& R)
 	} else {
 		return Normalize3d(SO3::vee3( SO3::log( R ) )); //log is accurate, so use it
 	}
+}
+
+EXPORT_SYM  
+Eigen::Matrix3d RotationX(double angle)
+{
+	Eigen::Matrix3d R;
+	R << 1,      0,       0,
+		 0, cos(angle), -sin(angle),
+		 0, sin(angle), cos(angle);
+	return R;
+}
+
+EXPORT_SYM  
+Eigen::Matrix3d RotationY(double angle)
+{
+	Eigen::Matrix3d R;
+	R << cos(angle), 0, sin(angle),
+		 0,          1, 0,
+		 -sin(angle),0, cos(angle);
+	return R;
+}
+
+EXPORT_SYM  
+Eigen::Matrix3d RotationZ(double angle)
+{
+	Eigen::Matrix3d R;
+	R << cos(angle), -sin(angle), 0,
+		 sin(angle), cos(angle), 0,
+		 0,          0,          1;
+	return R;
 }
 
 }

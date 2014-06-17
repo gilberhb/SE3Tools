@@ -143,18 +143,60 @@ namespace SO3 {
 	EXPORT_SYM  Eigen::Vector3d RotationAxis(const Eigen::Matrix3d& R);
 
 	/*!
-	 * \brief  Generate a rotation matrix from an axis and an angle.
-	 * 
-	 * This function is a utility function which generates the rotation 
-	 * matrix given by a rotation about a given axis by a given angle. 
-     * The angle should be supplied in radians. This function first
-     * computes the element of se(3) corresponding to the axis angle
-     * representation as ( angle*SO3::hat3(axis) ). Then the function
-     * SO3::expm is used to compute the rotation.
+	 * \brief  Compute a rotation matrix from the axis angle representation.
 	 *
-	 * \param  axis	The rotation axis.
+	 * This function returns the rotation matrix represented by a rotation of a given angle
+	 * about a given axis. The axis is normalized prior to computation of the rotation matrix,
+	 * so changes in scaling of the parameter axis don't change the result returned by this function.
+	 *
+	 * \param  axis	 The rotation axis (Will be normalized prior to use)
 	 * \param  angle The rotation angle.
-	 * \return axis	The axis of rotation as a unit vector.
+	 * \return R	 The rotation matrix.
 	 */
 	EXPORT_SYM  Eigen::Matrix3d AxisAngle(const Eigen::Vector3d& axis, double angle);
+
+	/*!
+	 * \brief Compute the canonical rotation about the \f$ e_1 \f$-axis, or \f$x\f$-axis.
+	 *
+	 * This function computes the rotation about the first canonical basis vector, with
+	 * the angle given by the user. This matrix is given by
+	 *
+	 * \f[
+	 *		R = \begin{bmatrix} 1 & 0 & 0 \\ 0 & \cos(\theta) & -\sin(\theta) \\ 0 & \sin(\theta) & \cos(\theta) \end{bmatrix}
+	 * \f]
+	 *
+	 * \param  angle	 The rotation angle.
+	 * \return R	     The rotation matrix.
+	 */
+	EXPORT_SYM  Eigen::Matrix3d RotationX(double angle);
+
+	/*!
+	 * \brief Compute the canonical rotation about the \f$ e_2 \f$-axis, or \f$y\f$-axis.
+	 *
+	 * This function computes the rotation about the second canonical basis vector, with
+	 * the angle given by the user. This matrix is given by
+	 *
+	 * \f[
+	 *		R = \begin{bmatrix} \cos(\theta) & 0 & \sin(\theta) \\ 0 & 1 & 0 \\ -\sin(\theta) & 0 & cos(\theta) \end{bmatrix}
+	 * \f]
+	 *
+	 * \param  angle	 The rotation angle.
+	 * \return R	     The rotation matrix.
+	 */
+	EXPORT_SYM  Eigen::Matrix3d RotationY(double angle);
+
+	/*!
+	 * \brief Compute the canonical rotation about the \f$ e_3 \f$-axis, or \f$z\f$-axis.
+	 *
+	 * This function computes the rotation about the third canonical basis vector, with
+	 * the angle given by the user. This matrix is given by
+	 *
+	 * \f[
+	 *		R = \begin{bmatrix} \cos(\theta) & -\sin(\theta) & 0 \\ \sin(\theta) & \cos(\theta) & 0 \\ 0 & 0 & 1 \end{bmatrix}
+	 * \f]
+	 *
+	 * \param  angle	 The rotation angle.
+	 * \return R	     The rotation matrix.
+	 */
+	EXPORT_SYM  Eigen::Matrix3d RotationZ(double angle);
 }
