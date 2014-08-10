@@ -22,17 +22,14 @@ using SE3::Vector6d;
 using std::cout;
 using std::endl;
 
-LARGE_INTEGER t1,t2,freq;
 const static double PI = 3.14159265358979323846264;
 
 int _tmain(int argc, _TCHAR* argv[])
 {
 	try {
-		QueryPerformanceFrequency(&freq);
 
 		Vector6d xi;
 		xi << 1.0,0.0,0.5,0.0,1e-50,1e-50;
-		QueryPerformanceCounter(&t1);
 
 
 		Eigen::Matrix4d X = Eigen::Matrix4d::Identity();
@@ -40,10 +37,8 @@ int _tmain(int argc, _TCHAR* argv[])
 		for (int i = 0; i < 10000; ++i) {
 			X = expm(hat6(xi))*X;
 		}
-		QueryPerformanceCounter(&t2);
 
 		cout << X << endl;
-		cout << endl << "Elapsed time: " << (double(t2.QuadPart)-double(t1.QuadPart))/(double(freq.QuadPart)) << endl;
 		cout << SE3::expm( hat6(xi) ) << endl;
 		cout << SO3::log( (expm(hat6(xi))).block<3,3>(0,0) ) << endl;
 		cout << SO3::RotationAxis( (expm(hat6(xi))).block<3,3>(0,0) ) << endl;
