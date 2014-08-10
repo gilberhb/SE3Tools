@@ -4,11 +4,12 @@
 #include <Eigen/Dense>
 #include <iostream>
 #include "../SE3Tools/SE3.h"
-#include "Windows.h"
+#ifdef min
 #undef min
-#include <tchar.h>
+#endif
 #include <iomanip>
 #include <limits>
+#include <stdexcept>
 
 using Eigen::MatrixXd;
 using Eigen::Vector3d;
@@ -24,7 +25,7 @@ using std::endl;
 
 const static double PI = 3.14159265358979323846264;
 
-int _tmain(int argc, _TCHAR* argv[])
+int main(int argc, char* argv[])
 {
 	try {
 
