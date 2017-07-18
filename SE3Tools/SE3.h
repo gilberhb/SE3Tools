@@ -22,6 +22,12 @@
 #define EXPORT_SYM
 #endif
 
+#if ( defined(WIN32) || defined( _WIN64) )
+#define ALIGN_SPEC _declspec(align(32))
+#else
+#define ALIGN_SPEC
+#endif
+
 /*!
  * \addtogroup SE3
  * @{
@@ -127,6 +133,39 @@ namespace SE3 {
 	 * \return      T		    The homogeneous transformation.
 	 */
 	EXPORT_SYM Eigen::Matrix4d MakeHomogeneous(const Eigen::Matrix3d& R);
+
+	/*!
+		This structure represents a screw decomposition of a homomgeneous 
+		transformation matrix.
+	
+	*/
+	struct ALIGN_SPEC Screw
+	{
+		double d;                   //!< The translation distance along the axis
+		double theta;               //!< The angle of rotation abou the axis
+		Eigen::Matrix<double, 6, 1>	L; //!< The Plücker coordinates of the axis
+
+		EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+	};
+
+	/*!
+	 *	\brief Get the screw invariants and plücker coordinates of the screw axis
+	 *
+	 * This method performs that screw decomposition of a homogeneous transformation.
+	 * 
+	 * \param[in]	T			The homogeneous transformation to decompose
+	 * \return		The screw parameters for T
+	 */
+	EXPORT_SYM Screw GetScrew(const Eigen::Matrix4d& T);
+
+	/*!
+	 *  \brief Get the inverse of a homogeneous transformation matrix
+	 *  
+	 *  This method is a fast inverse for homogeneous transformation matrices using the closed formula.
+	 *  \param[in]	T		The homogeneous transformation matrix whose inverse is desired
+	 *  \return		The matrix inverse of T
+	 */
+	EXPORT_SYM Eigen::Matrix4d invSE3(const Eigen::Matrix4d& T);
 }
 
 /*! @} End of Doxygen Group */

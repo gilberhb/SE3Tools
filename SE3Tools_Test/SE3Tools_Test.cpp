@@ -149,6 +149,54 @@ int main(int argc, char* argv[])
 				cout << e.what() << endl;
 			}
 		}
+		{
+			try {
+				cout << endl << endl << "Screw decomposition: " << endl;
+				Vector6d xi;
+				xi.topRows<3>() = Eigen::Vector3d::UnitX();
+				xi.bottomRows<3>() = -Eigen::Vector3d::UnitZ();
+				Eigen::Matrix4d T = SE3::expm(SE3::hat6(xi));
+
+				Eigen::Matrix4d logT = SE3::log(T);
+				cout << "logT: " << endl << logT << endl;
+
+				SE3::Vector6d xiT = SE3::vee6(logT); 
+				cout << "xi: " << xiT.transpose() << endl;
+				
+				SE3::Screw S = SE3::GetScrew(T);
+				cout << "T = " << endl << T << endl;
+				cout << "d: " << S.d << endl;
+				cout << "theta: " << S.theta << endl;
+				cout << "L: " << S.L.transpose() << endl;
+			}
+			catch (std::runtime_error& e) {
+				cout << e.what() << endl;
+			}
+		}
+
+		{
+			try {
+				cout << endl << endl << "Testing Inverse: " << endl;
+				SE3::Vector6d xi;
+				xi(0) = 0.7;
+				xi(1) = -0.2;
+				xi(2) = 0.9;
+				xi(3) = 0.5;
+				xi(4) = 1;
+				xi(5) = -0.5;
+				Eigen::Matrix4d T = SE3::expm(SE3::hat6(xi));
+				Eigen::Matrix4d Tinv = SE3::invSE3(T);
+				
+				cout << "T = " << endl << T << endl << endl;
+				cout << "Tinv = " << endl << Tinv << endl << endl;
+				cout << "T*Tinv" << endl << T*Tinv << endl << endl;
+				cout << "Tinv*T" << endl << Tinv*T << endl << endl;
+			}
+			catch (std::runtime_error &e) {
+				cout << e.what() << endl;
+			}
+
+		}
 	} catch (std::runtime_error& e) {
 		cout << e.what() << endl;
 	}

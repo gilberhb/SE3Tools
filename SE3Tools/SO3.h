@@ -147,7 +147,7 @@ namespace SO3 {
 	 * The function SO3::log is used to first compute the logarithm of R, 
 	 * and then the axis is extracted from the result. The non-normalized
 	 * vector is computed by SO3::vee3 ( SO3::log ( R ) ), and then divided
-	 * by its norm to get the correct answer. The result is accurate even
+	 * by its norm to get the answer. The result is accurate even
 	 * when the rotation is small. If the rotation is exactly the identity,
 	 * an std::runtime_error exception is thrown with a message indicating
 	 * this problem.
